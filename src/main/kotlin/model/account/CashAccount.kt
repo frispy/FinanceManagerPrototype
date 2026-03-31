@@ -7,11 +7,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CashAccount(
     override val userId: String,
-    override var balance: Long = 0,
+    override val balance: Long = 0,
     override val currency: CurrencyType,
     val cashLocation: String,
     val dailyLimit: Long,
     override val id: String
 ) : Account() {
-    override val type: AccountType = AccountType.CASH
+    override val accountType: AccountType = AccountType.CASH
+
+    override fun updateBalance(newBalance: Long): Account {
+        return this.copy(balance = newBalance)
+    }
 }

@@ -8,8 +8,10 @@ import model.Identifiable
 @Serializable
 sealed class Account : Identifiable {
     abstract val userId: String
-    abstract var balance: Long
+    abstract val balance: Long
     abstract val currency: CurrencyType
-    abstract val type: AccountType
+    abstract val accountType: AccountType
     override abstract val id: String
+
+    abstract fun updateBalance(newBalance: Long): Account
 }

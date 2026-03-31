@@ -7,7 +7,7 @@ import model.Identifiable
 @Serializable
 data class User(
     override val id: String,
-    var login: String,
+    val login: String,
     val passwordHash: ByteArray
 ) : Identifiable {
     override fun equals(other: Any?): Boolean {

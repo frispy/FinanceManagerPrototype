@@ -8,6 +8,6 @@ class CategoryRepository(path: String) : BaseRepository<TransactionCategory>(
     serializer<List<TransactionCategory>>()
 ) {
     fun findByName(name: String): TransactionCategory? {
-        return items.find { it.name == name }
+        return itemsFlow.value.find { it.name == name }
     }
 }

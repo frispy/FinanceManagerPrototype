@@ -1,5 +1,10 @@
 package repository
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import model.Identifiable
@@ -11,56 +16,58 @@ abstract class BaseRepository<T: Identifiable> (
     private val filePath: String,
     private val serializer: KSerializer<List<T>>
 )   {
-    protected val items = mutableListOf<T>()
+
+    private val _itemsFlow = MutableStateFlow<List<T>>(emptyList()) // OUR STATE
+
+    val itemsFlow: StateFlow<List<T>> = _itemsFlow.asStateFlow()
+
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
-    // runs when repository is created
-    init {
+    // run when repository is created
+    suspend fun loadData() = withContext(Dispatchers.IO) {
         val file = File(filePath)
-        // check if the file exists
         if (file.exists()) {
             val content = file.readText()
-            // only try to parse if file is not empty
-            if (content.isNotEmpty()) {
-                try {
-                    // deserialize JSON content into list of T and add to items
-                    items.addAll(json.decodeFromString(serializer, content))
-                } catch (e: Exception) {
-                    println("Error loading data from $filePath: ${e.message}")
-                }
+            val parsed = json.decodeFromString(serializer, content)
+            _itemsFlow.value = parsed
+        }
+    }
+
+    fun getAll(): List<T> = _itemsFlow.value
+
+    fun getById(id: String): T? = _itemsFlow.value.find { it.id == id }
+
+    suspend fun add(item: T) {
+        val newList = _itemsFlow.value + item
+        saveAndEmit(newList)
+    }
+
+    suspend fun update(item: T): Boolean {
+        val newList = _itemsFlow.value.map {
+            // if item with same id found
+            if (it.id == item.id) {
+                item // replace with updated item
+            } else {
+                it
             }
         }
+
+        saveAndEmit(newList)
+        return true
     }
 
-    fun getAll(): List<T> = items.toList()
-
-    fun getById(id: String): T? = items.find { it.id == id }
-
-    fun add(item: T) {
-        items.add(item)
-        saveToJson()
+    suspend fun delete(id: String) {
+        // generate new list without value
+        val newList = _itemsFlow.value.filterNot { it.id == id }
+        saveAndEmit(newList)
     }
 
-    fun update(item: T): Boolean {
-        val index = items.indexOfFirst { it.id == item.id }
-        return if (index != -1) {
-            items[index] = item
-            saveToJson()
-            true
-        } else {
-            false
+    private suspend fun saveAndEmit(newList: List<T>) {
+        withContext(Dispatchers.IO) {
+            val content = json.encodeToString(serializer, newList)
+            File(filePath).writeText(content)
         }
-    }
-
-    fun delete(id: String) {
-        if (items.removeIf { it.id == id }) {
-            saveToJson()
-        }
-    }
-
-    // serializes the current list and writes it to the JSON file
-    private fun saveToJson() {
-        val content = json.encodeToString(serializer, items)
-        File(filePath).writeText(content)
+        // update state (only if there was sucessful write operation)
+        _itemsFlow.value = newList
     }
 }

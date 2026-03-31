@@ -8,6 +8,6 @@ class UserRepository(path: String) : BaseRepository<User>(
     serializer<List<User>>()
 ) {
     fun findByLogin(login: String): User? {
-        return items.find { it.login == login }
+        return itemsFlow.value.find { it.login == login }
     }
 }

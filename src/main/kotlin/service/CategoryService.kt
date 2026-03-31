@@ -7,7 +7,7 @@ import java.util.UUID
 class CategoryService(
     private val categoryRepository: CategoryRepository
 ) {
-    fun createCategory(name: String): TransactionCategory? {
+    suspend fun createCategory(name: String): TransactionCategory? {
         // check for duplicates
         val existing = categoryRepository.findByName(name)
         if (existing != null) {
@@ -31,7 +31,7 @@ class CategoryService(
     }
 
     // delete specific category
-    fun deleteCategory(categoryId: String) {
+    suspend fun deleteCategory(categoryId: String) {
         categoryRepository.delete(categoryId)
     }
 }

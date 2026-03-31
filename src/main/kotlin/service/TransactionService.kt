@@ -10,7 +10,7 @@ class TransactionService(
     private val transactionFactory: TransactionFactory,
     private val currencyExchange: CurrencyExchangeService
 ) {
-    fun transfer(params: TransactionCreationParams.Transfer): Boolean {
+    suspend fun transfer(params: TransactionCreationParams.Transfer): Boolean {
         if (params.amount <= 0) return false
 
         // get currencies for both accounts
@@ -51,7 +51,7 @@ class TransactionService(
         return true
     }
 
-    fun income(params: TransactionCreationParams.Income): Boolean {
+    suspend fun income(params: TransactionCreationParams.Income): Boolean {
         if (params.amount <= 0) return false
 
         // get account currency
@@ -77,7 +77,7 @@ class TransactionService(
         return true
     }
 
-    fun expense(params: TransactionCreationParams.Expense): Boolean {
+    suspend fun expense(params: TransactionCreationParams.Expense): Boolean {
         if (params.amount <= 0) return false
 
         // get account currency

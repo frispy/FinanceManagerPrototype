@@ -9,6 +9,6 @@ class TransactionRepository(path: String) : BaseRepository<Transaction>(
     serializer()
 ) {
     fun getTransactionsByAccount(accountId: String): List<Transaction> {
-        return items.filter { it.accountId == accountId }
+        return itemsFlow.value.filter { it.accountId == accountId }
     }
 }

@@ -9,7 +9,7 @@ class UserService(
     private val userRepository: UserRepository,
     private val userFactory: GenericFactory<User, UserCreationParams>,
 ){
-    fun register(params: UserCreationParams): Boolean {
+    suspend fun register(params: UserCreationParams): Boolean {
         if (userRepository.findByLogin(params.login) != null) {
             return false
         }
@@ -26,7 +26,7 @@ class UserService(
         return null
     }
 
-    fun changePassword(login: String, oldPassword: String, newPassword: String): Boolean {
+    suspend fun changePassword(login: String, oldPassword: String, newPassword: String): Boolean {
         val foundUser = userRepository.findByLogin(login) ?: return false
 
         // verify the old password matches what's in the DB

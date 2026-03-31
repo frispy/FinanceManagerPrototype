@@ -8,6 +8,6 @@ class AccountRepository(path: String) : BaseRepository<Account>(
     serializer()
 ) {
     fun findByUserId(userId: String): List<Account> {
-        return items.filter { it.userId == userId } // get all accounts
+        return itemsFlow.value.filter { it.userId == userId } // get all accounts
     }
 }
