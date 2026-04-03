@@ -75,13 +75,15 @@ fun main() = runBlocking {
             // Дохід
             transactionService.income(
                 TransactionCreationParams.Income(
-                    userId = currentUser.id,
-                    accountId = myWallet.id,
-                    amount = 15000L,
-                    currency = CurrencyType.UAH,
-                    date = "2026-03-30T10:00:00",
-                    categoryId = salaryCategory?.id ?: "",
-                    note = "Аванс"
+                    common = TransactionCreationParams.Common(
+                        userId = currentUser.id,
+                        accountId = myWallet.id,
+                        amount = 15000L,
+                        currency = CurrencyType.UAH,
+                        date = "2026-03-30T10:00:00",
+                        categoryId = salaryCategory?.id ?: "",
+                        note = "Аванс"
+                    )
                 )
             )
             println("Додано дохід 15000 UAH. Поточний баланс: ${accountService.getConcreteBalance(myWallet.id)}")
@@ -89,13 +91,15 @@ fun main() = runBlocking {
             // Витрата
             transactionService.expense(
                 TransactionCreationParams.Expense(
-                    userId = currentUser.id,
-                    accountId = myWallet.id,
-                    amount = 250L,
-                    currency = CurrencyType.UAH,
-                    date = "2026-03-30T13:00:00",
-                    categoryId = foodCategory?.id ?: "",
-                    note = "Обід в кафе"
+                    TransactionCreationParams.Common(
+                        userId = currentUser.id,
+                        accountId = myWallet.id,
+                        amount = 250L,
+                        currency = CurrencyType.UAH,
+                        date = "2026-03-30T13:00:00",
+                        categoryId = foodCategory?.id ?: "",
+                        note = "Обід в кафе"
+                    )
                 )
             )
             println("Проведено витрату 250 UAH. Поточний баланс: ${accountService.getConcreteBalance(myWallet.id)}")

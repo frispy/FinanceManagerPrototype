@@ -20,7 +20,7 @@ data class TransactionBase(
 @Serializable
 sealed class Transaction : Identifiable {
     abstract val base: TransactionBase
-    abstract val type: TransactionType
+    abstract val transactionType: TransactionType
 
     // delegate these properties so repository/service can see them
     override val id: String get() = base.id
@@ -30,12 +30,12 @@ sealed class Transaction : Identifiable {
 
     @Serializable
     data class Expense(override val base: TransactionBase) : Transaction() {
-        override val type = TransactionType.EXPENSE
+        override val transactionType = TransactionType.EXPENSE
     }
 
     @Serializable
     data class Income(override val base: TransactionBase) : Transaction() {
-        override val type = TransactionType.INCOME
+        override val transactionType = TransactionType.INCOME
     }
 
     @Serializable
@@ -43,6 +43,6 @@ sealed class Transaction : Identifiable {
         override val base: TransactionBase,
         val targetAccountId: String
     ) : Transaction() {
-        override val type = TransactionType.TRANSFER
+        override val transactionType = TransactionType.TRANSFER
     }
 }
