@@ -6,54 +6,43 @@ import model.Identifiable
 import model.enum.TransactionType
 
 @Serializable
+data class TransactionBase(
+    override val id: String,
+    val userId: String,
+    val accountId: String,
+    val amount: Long,
+    val currency: CurrencyType,
+    val date: String,
+    val categoryId: String,
+    val note: String
+) : Identifiable
+
+@Serializable
 sealed class Transaction : Identifiable {
-    abstract override val id: String
-    abstract val userId: String
-    abstract val accountId: String
-    abstract val amount: Long
-    abstract val currency: CurrencyType
-    abstract val date: String
-    abstract val categoryId: String
-    abstract val note: String
-    abstract val transactionType: TransactionType
+    abstract val base: TransactionBase
+    abstract val type: TransactionType
+
+    // delegate these properties so repository/service can see them
+    override val id: String get() = base.id
+    val accountId: String get() = base.accountId
+    val amount: Long get() = base.amount
+    val currency: CurrencyType get() = base.currency
 
     @Serializable
-    data class Expense(
-        override val id: String,
-        override val userId: String,
-        override val accountId: String,
-        override val amount: Long,
-        override val currency: CurrencyType,
-        override val date: String,
-        override val categoryId: String,
-        override val note: String,
-        override val transactionType: TransactionType = TransactionType.EXPENSE,
-    ) : Transaction()
+    data class Expense(override val base: TransactionBase) : Transaction() {
+        override val type = TransactionType.EXPENSE
+    }
 
     @Serializable
-    data class Income(
-        override val id: String,
-        override val userId: String,
-        override val accountId: String,
-        override val amount: Long,
-        override val currency: CurrencyType,
-        override val date: String,
-        override val categoryId: String,
-        override val note: String,
-        override val transactionType: TransactionType = TransactionType.INCOME,
-    ) : Transaction()
+    data class Income(override val base: TransactionBase) : Transaction() {
+        override val type = TransactionType.INCOME
+    }
 
     @Serializable
     data class Transfer(
-        override val id: String,
-        override val userId: String,
-        override val accountId: String,
-        val targetAccountId: String, // mandatory for transfers
-        override val amount: Long,
-        override val currency: CurrencyType,
-        override val date: String,
-        override val categoryId: String,
-        override val note: String,
-        override val transactionType: TransactionType = TransactionType.TRANSFER,
-    ) : Transaction()
+        override val base: TransactionBase,
+        val targetAccountId: String
+    ) : Transaction() {
+        override val type = TransactionType.TRANSFER
+    }
 }

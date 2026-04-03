@@ -11,27 +11,27 @@ class TransactionService(
     private val currencyExchange: CurrencyExchangeService
 ) {
     suspend fun transfer(params: TransactionCreationParams.Transfer): Boolean {
-        if (params.amount <= 0) return false
+        if (params.common.amount <= 0) return false
 
         // get currencies for both accounts
-        val sourceCurrency = accountService.getAccountCurrency(params.accountId) ?: return false
+        val sourceCurrency = accountService.getAccountCurrency(params.common.accountId) ?: return false
         val targetCurrency = accountService.getAccountCurrency(params.targetAccountId) ?: return false
 
         // calculate exact amounts to withdraw and deposit based on account currencies
         val amountToWithdraw = currencyExchange.convert(
-            amount = params.amount,
-            from = params.currency,
+            amount = params.common.amount,
+            from = params.common.currency,
             to = sourceCurrency
         )
 
         val amountToDeposit = currencyExchange.convert(
-            amount = params.amount,
-            from = params.currency,
+            amount = params.common.amount,
+            from = params.common.currency,
             to = targetCurrency
         )
 
         // withdraw from source
-        val withdrawn = accountService.withdraw(params.accountId, amountToWithdraw)
+        val withdrawn = accountService.withdraw(params.common.accountId, amountToWithdraw)
         if (!withdrawn) {
             return false
         }
@@ -40,7 +40,7 @@ class TransactionService(
         val deposited = accountService.deposit(params.targetAccountId, amountToDeposit)
         if (!deposited) {
             // rollback withdrawal if deposit fails
-            accountService.deposit(params.accountId, amountToWithdraw)
+            accountService.deposit(params.common.accountId, amountToWithdraw)
             return false
         }
 
@@ -52,20 +52,20 @@ class TransactionService(
     }
 
     suspend fun income(params: TransactionCreationParams.Income): Boolean {
-        if (params.amount <= 0) return false
+        if (params.common.amount <= 0) return false
 
         // get account currency
-        val accountCurrency = accountService.getAccountCurrency(params.accountId) ?: return false
+        val accountCurrency = accountService.getAccountCurrency(params.common.accountId) ?: return false
 
         // convert currency if the transaction currency differs from the account currency
         val amountToDeposit = currencyExchange.convert(
-            amount = params.amount,
-            from = params.currency,
+            amount = params.common.amount,
+            from = params.common.currency,
             to = accountCurrency
         )
 
         // deposit
-        val deposited = accountService.deposit(params.accountId, amountToDeposit)
+        val deposited = accountService.deposit(params.common.accountId, amountToDeposit)
         if (!deposited) {
             return false
         }
@@ -78,20 +78,20 @@ class TransactionService(
     }
 
     suspend fun expense(params: TransactionCreationParams.Expense): Boolean {
-        if (params.amount <= 0) return false
+        if (params.common.amount <= 0) return false
 
         // get account currency
-        val accountCurrency = accountService.getAccountCurrency(params.accountId) ?: return false
+        val accountCurrency = accountService.getAccountCurrency(params.common.accountId) ?: return false
 
         // convert currency if the transaction currency differs from the account currency
         val amountToWithdraw = currencyExchange.convert(
-            amount = params.amount,
-            from = params.currency,
+            amount = params.common.amount,
+            from = params.common.currency,
             to = accountCurrency
         )
 
         // withdraw
-        val withdrawn = accountService.withdraw(params.accountId, amountToWithdraw)
+        val withdrawn = accountService.withdraw(params.common.accountId, amountToWithdraw)
         if (!withdrawn) {
             return false
         }

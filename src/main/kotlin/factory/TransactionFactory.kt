@@ -2,49 +2,35 @@ package factory
 
 import model.params.TransactionCreationParams
 import model.transaction.Transaction
+import model.transaction.TransactionBase
 import java.time.Clock
 import java.util.UUID
 
 class TransactionFactory(
     private val clock: Clock = Clock.systemUTC()
-) : GenericFactory<Transaction, TransactionCreationParams> {
-
-    override fun create(params: TransactionCreationParams): Transaction {
-        val transactionId = UUID.randomUUID().toString()
-        val currentDate = clock.instant().toString()
+) {
+    fun create(params: TransactionCreationParams): Transaction {
+        // Helper to convert Params.Common to TransactionBase
+        fun createBase(c: TransactionCreationParams.Common) = TransactionBase(
+            id = UUID.randomUUID().toString(), // or however you make IDs
+            userId = c.userId,
+            accountId = c.accountId,
+            amount = c.amount,
+            currency = c.currency,
+            date = c.date,
+            categoryId = c.categoryId,
+            note = c.note
+        )
 
         return when (params) {
-            is TransactionCreationParams.Transfer -> Transaction.Transfer(
-                id = transactionId,
-                userId = params.userId,
-                accountId = params.accountId,
-                targetAccountId = params.targetAccountId,
-                amount = params.amount,
-                currency = params.currency,
-                date = currentDate,
-                categoryId = params.categoryId,
-                note = params.note
-            )
-            is TransactionCreationParams.Income -> Transaction.Income(
-                id = transactionId,
-                userId = params.userId,
-                accountId = params.accountId,
-                amount = params.amount,
-                currency = params.currency,
-                date = currentDate,
-                categoryId = params.categoryId,
-                note = params.note
-            )
-            is TransactionCreationParams.Expense -> Transaction.Expense(
-                id = transactionId,
-                userId = params.userId,
-                accountId = params.accountId,
-                amount = params.amount,
-                currency = params.currency,
-                date = currentDate,
-                categoryId = params.categoryId,
-                note = params.note
-            )
+            is TransactionCreationParams.Expense ->
+                Transaction.Expense(createBase(params.common))
+
+            is TransactionCreationParams.Income ->
+                Transaction.Income(createBase(params.common))
+
+            is TransactionCreationParams.Transfer ->
+                Transaction.Transfer(createBase(params.common), params.targetAccountId)
         }
     }
 }
