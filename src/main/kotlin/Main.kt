@@ -9,51 +9,36 @@ fun main() = runBlocking {
     try {
         println("=== Запуск Менеджера особистих фінансів (CLI) ===")
 
-        // 1. Ініціалізація фабрик
+        // 1. Ініціалізація фабрик (залишаємо як було)
         val userFactory = UserFactory()
         val accountFactory = AccountFactory()
         val transactionFactory = TransactionFactory()
 
-        // 2. Ініціалізація репозиторіїв (вказуємо шляхи до JSON файлів)
-        val userRepository = UserRepository("users.json")
-        val accountRepository = AccountRepository("accounts.json")
-        val transactionRepository = TransactionRepository("transactions.json")
-        val categoryRepository = CategoryRepository("categories.json")
+        // 2. Ініціалізація UnitOfWork
+        val unitOfWork = UnitOfWork("data_files")
 
-        // 3. Асинхронне завантаження даних (те, що ми змінили замість init)
-        println("Завантаження даних з файлів...")
-        userRepository.loadData()
-        accountRepository.loadData()
-        transactionRepository.loadData()
-        categoryRepository.loadData()
+        // 3. Асинхронне завантаження даних
+        println("Завантаження даних...")
+        unitOfWork.userRepository.loadData()
+        unitOfWork.accountRepository.loadData()
+        unitOfWork.transactionRepository.loadData()
+        unitOfWork.categoryRepository.loadData()
 
         // 4. Ініціалізація сервісів
         val currencyExchange = BasicCurrencyExchangeService()
-        val userService = UserService(userRepository, userFactory)
-        val accountService = AccountService(accountRepository, accountFactory)
-        val transactionService = TransactionService(transactionRepository, accountService, transactionFactory, currencyExchange)
-        val categoryService = CategoryService(categoryRepository)
 
-        // --- ДЕМОНСТРАЦІЯ ЛОГІКИ ПРОТОТИПУ ---
+        val userService = UserService(unitOfWork, userFactory)
+        val accountService = AccountService(unitOfWork, accountFactory)
+        val transactionService = TransactionService(unitOfWork, accountService, transactionFactory, currencyExchange)
+        val categoryService = CategoryService(unitOfWork)
 
-        println("\n--- 1. Реєстрація та Авторизація ---")
-        val registerSuccess = userService.register(UserCreationParams("admin", "12345"))
-        if (registerSuccess) println("Користувача 'admin' успішно зареєстровано!")
+        // --- ДЕМОНСТРАЦІЯ ЛОГІКИ ---
 
-        val currentUser = userService.login("admin", "12345")
-        if (currentUser == null) {
-            println("Помилка авторизації!")
-            return@runBlocking // Виходимо, якщо логін не вдався
-        }
-        println("Авторизовано як: ${currentUser.login}")
+        println("\n--- 1. Реєстрація ---")
+        userService.register(UserCreationParams("admin", "12345"))
+        val currentUser = userService.login("admin", "12345") ?: return@runBlocking
 
-        println("\n--- 2. Створення категорії ---")
-        val foodCategory = categoryService.createCategory("Їжа та напої")
-        val salaryCategory = categoryService.createCategory("Зарплата")
-        println("Створено категорії: ${foodCategory?.name}, ${salaryCategory?.name}")
-
-        println("\n--- 3. Створення рахунку ---")
-        // Створюємо гаманець
+        println("\n--- 2. Створення рахунку ---")
         val cashAccountParams = AccountCreationParams.Cash(
             userId = currentUser.id,
             initBalance = 0L,
@@ -63,12 +48,17 @@ fun main() = runBlocking {
         )
         accountService.createAccount(cashAccountParams)
 
-        // Отримуємо створений рахунок (для прототипу беремо перший ліпший)
-        val userAccounts = accountRepository.getAll().filter { it.userId == currentUser.id }
-        val myWallet = userAccounts.firstOrNull()
+        println("\n--- 3. Створення категорії ---")
+        val foodCategory = categoryService.createCategory("Їжа та напої")
+        val salaryCategory = categoryService.createCategory("Зарплата")
+        println("Створено категорії: ${foodCategory?.name}, ${salaryCategory?.name}")
+
+
+        // Звертаємось до репозиторію через unitOfWork
+        val myWallet = unitOfWork.accountRepository.getAll().firstOrNull { it.userId == currentUser.id }
 
         if (myWallet != null) {
-            println("Створено рахунок: ${myWallet.accountType} з балансом ${myWallet.balance} ${myWallet.currency}")
+            println("Рахунок готовий. Баланс: ${accountService.getConcreteBalance(myWallet.id)}")
 
             println("\n--- 4. Проведення транзакцій ---")
 

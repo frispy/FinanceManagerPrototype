@@ -7,67 +7,68 @@ import model.account.Account
 import model.enum.CurrencyType
 import model.params.AccountCreationParams
 import repository.AccountRepository
+import repository.UnitOfWork
 
 class AccountService (
-    private val accountRepository: AccountRepository,
+    private val unitOfWork: UnitOfWork,
     private val accountFactory: GenericFactory<Account, AccountCreationParams>,
 ) {
     suspend fun createAccount(params: AccountCreationParams): Boolean {
         val account = accountFactory.create(params)
-        accountRepository.add(account)
+        unitOfWork.accountRepository.add(account)
         return true
     }
 
     fun getAccountCurrency(accountId: String): CurrencyType? {
-        return accountRepository.getById(accountId)?.currency
+        return unitOfWork.accountRepository.getById(accountId)?.currency
     }
 
     // remove money
     suspend fun withdraw(accountId: String, amount: Long): Boolean {
-        val account = accountRepository.getById(accountId) ?: return false
+        val account = unitOfWork.accountRepository.getById(accountId) ?: return false
 
         if (amount <= 0 || account.balance < amount) {
             return false
         }
 
         account.updateBalance(account.balance - amount)
-        accountRepository.update(account)
+        unitOfWork.accountRepository.update(account)
 
         return true
     }
 
     // add money
     suspend fun deposit(accountId: String, amount: Long): Boolean {
-        val account = accountRepository.getById(accountId) ?: return false
+        val account = unitOfWork.accountRepository.getById(accountId) ?: return false
 
         if (amount <= 0) {
             return false
         }
 
         account.updateBalance(account.balance + amount)
-        accountRepository.update(account)
+        unitOfWork.accountRepository.update(account)
 
         return true
     }
 
     suspend fun deleteAccount(accountId: String) {
-        accountRepository.delete(accountId)
+        unitOfWork.accountRepository.delete(accountId)
     }
 
 //    fun getTotalBalance(userId: String): String {
-//        val accounts = accountRepository.findByUserId(userId)
+//        val accounts = unitOfWork.accountRepository.findByUserId(userId)
 //        return accounts.sumOf { it.balance }.toString()
 //    }
 
     fun getTotalBalanceFlow(userId: String): Flow<Long> {
         // take the flow of account lists from repository
-        return accountRepository.itemsFlow.map { accountsList ->
+        return unitOfWork.accountRepository.itemsFlow.map { accountsList ->
             // on each account update, filter it and count the sum
             accountsList.filter { it.userId == userId }.sumOf { it.balance }
         }
     }
 
     fun getConcreteBalance(accountId: String): String {
-        return accountRepository.getById(accountId)?.balance.toString()
+        return unitOfWork.accountRepository.getById(accountId)?.balance.toString()
     }
 }

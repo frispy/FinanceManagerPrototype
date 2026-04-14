@@ -10,7 +10,7 @@ class TransactionFactory(
     private val clock: Clock = Clock.systemUTC()
 ) {
     fun create(params: TransactionCreationParams): Transaction {
-        // Helper to convert Params.Common to TransactionBase
+        // helper to convert Params.Common to TransactionBase
         fun createBase(c: TransactionCreationParams.Common) = TransactionBase(
             id = UUID.randomUUID().toString(), // or however you make IDs
             userId = c.userId,

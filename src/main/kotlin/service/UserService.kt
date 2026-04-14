@@ -3,23 +3,23 @@ package service
 import factory.GenericFactory
 import model.params.UserCreationParams
 import model.user.User
-import repository.UserRepository
+import repository.UnitOfWork
 
 class UserService(
-    private val userRepository: UserRepository,
+    private val unitOfWork: UnitOfWork,
     private val userFactory: GenericFactory<User, UserCreationParams>,
 ){
     suspend fun register(params: UserCreationParams): Boolean {
-        if (userRepository.findByLogin(params.login) != null) {
+        if (unitOfWork.userRepository.findByLogin(params.login) != null) {
             return false
         }
         val newUser = userFactory.create(params)
-        userRepository.add(newUser)
+        unitOfWork.userRepository.add(newUser)
         return true
     }
 
     fun login(login: String, pass: String): User? {
-        val user = userRepository.findByLogin(login) ?: return null
+        val user = unitOfWork.userRepository.findByLogin(login) ?: return null
         if (pass.toByteArray().contentEquals(user.passwordHash)) {
             return user
         }
@@ -27,7 +27,7 @@ class UserService(
     }
 
     suspend fun changePassword(login: String, oldPassword: String, newPassword: String): Boolean {
-        val foundUser = userRepository.findByLogin(login) ?: return false
+        val foundUser = unitOfWork.userRepository.findByLogin(login) ?: return false
 
         // verify the old password matches what's in the DB
         if (!oldPassword.toByteArray().contentEquals(foundUser.passwordHash)) {
@@ -41,7 +41,7 @@ class UserService(
 
         // update the user with the new hash
         val updatedUser = foundUser.copy(passwordHash = newPassword.toByteArray())
-        userRepository.update(updatedUser)
+        unitOfWork.userRepository.update(updatedUser)
 
         return true
     }

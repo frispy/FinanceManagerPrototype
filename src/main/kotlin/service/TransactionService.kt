@@ -3,9 +3,10 @@ package service
 import factory.TransactionFactory
 import model.params.TransactionCreationParams
 import repository.TransactionRepository
+import repository.UnitOfWork
 
 class TransactionService(
-    private val transactionRepository: TransactionRepository,
+    private val unitOfWork: UnitOfWork,
     private val accountService: AccountService,
     private val transactionFactory: TransactionFactory,
     private val currencyExchange: CurrencyExchangeService
@@ -47,7 +48,7 @@ class TransactionService(
         // create the history record
         val transferRecord = transactionFactory.create(params)
 
-        transactionRepository.add(transferRecord)
+        unitOfWork.transactionRepository.add(transferRecord)
         return true
     }
 
@@ -73,7 +74,7 @@ class TransactionService(
         // create the history record
         val incomeRecord = transactionFactory.create(params)
 
-        transactionRepository.add(incomeRecord)
+        unitOfWork.transactionRepository.add(incomeRecord)
         return true
     }
 
@@ -99,7 +100,7 @@ class TransactionService(
         // create the history record
         val expenseRecord = transactionFactory.create(params)
 
-        transactionRepository.add(expenseRecord)
+        unitOfWork.transactionRepository.add(expenseRecord)
         return true
     }
 }
