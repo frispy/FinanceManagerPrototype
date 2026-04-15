@@ -1,12 +1,14 @@
 package model.user
 
-import model.account.Account
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 import model.Identifiable
 
+@Entity(tableName = "users") // mixed entity and table
 @Serializable
 data class User(
-    override val id: String,
+    @PrimaryKey override val id: String,
     val login: String,
     val passwordHash: ByteArray
 ) : Identifiable {

@@ -1,13 +1,10 @@
 package repository
 
-import kotlinx.serialization.serializer
+import data.dao.UserDao
 import model.user.User
 
-class UserRepository(path: String) : BaseRepository<User>(
-    path,
-    serializer<List<User>>()
-) {
-    fun findByLogin(login: String): User? {
-        return itemsFlow.value.find { it.login == login }
-    }
+class UserRepository(private val dao: UserDao) {
+    suspend fun findByLogin(login: String): User? = dao.findByLogin(login)
+    suspend fun add(user: User) = dao.insert(user)
+    suspend fun update(user: User) = dao.update(user)
 }

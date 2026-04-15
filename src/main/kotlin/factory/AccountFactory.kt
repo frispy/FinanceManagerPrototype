@@ -5,11 +5,13 @@ import model.account.BankAccount
 import model.account.CashAccount
 import model.account.DepositAccount
 import model.params.AccountCreationParams
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class AccountFactory : GenericFactory<Account, AccountCreationParams> {
     override fun create(params: AccountCreationParams): Account {
-        val accountId = UUID.randomUUID().toString()
+        val accountId = Uuid.random().toString()
 
         return when (params) {
             is AccountCreationParams.Bank -> {

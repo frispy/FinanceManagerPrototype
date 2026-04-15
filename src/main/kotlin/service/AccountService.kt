@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.map
 import model.account.Account
 import model.enum.CurrencyType
 import model.params.AccountCreationParams
-import repository.AccountRepository
 import repository.UnitOfWork
 
 class AccountService (
@@ -19,7 +18,7 @@ class AccountService (
         return true
     }
 
-    fun getAccountCurrency(accountId: String): CurrencyType? {
+    suspend fun getAccountCurrency(accountId: String): CurrencyType? {
         return unitOfWork.accountRepository.getById(accountId)?.currency
     }
 
@@ -33,7 +32,6 @@ class AccountService (
 
         account.updateBalance(account.balance - amount)
         unitOfWork.accountRepository.update(account)
-
         return true
     }
 
@@ -47,7 +45,6 @@ class AccountService (
 
         account.updateBalance(account.balance + amount)
         unitOfWork.accountRepository.update(account)
-
         return true
     }
 
@@ -55,20 +52,14 @@ class AccountService (
         unitOfWork.accountRepository.delete(accountId)
     }
 
-//    fun getTotalBalance(userId: String): String {
-//        val accounts = unitOfWork.accountRepository.findByUserId(userId)
-//        return accounts.sumOf { it.balance }.toString()
-//    }
-
     fun getTotalBalanceFlow(userId: String): Flow<Long> {
-        // take the flow of account lists from repository
-        return unitOfWork.accountRepository.itemsFlow.map { accountsList ->
-            // on each account update, filter it and count the sum
+        return unitOfWork.accountRepository.getAllAccountsFlow().map { accountsList ->
+            // get total sum of accounts
             accountsList.filter { it.userId == userId }.sumOf { it.balance }
         }
     }
 
-    fun getConcreteBalance(accountId: String): String {
-        return unitOfWork.accountRepository.getById(accountId)?.balance.toString()
+    suspend fun getConcreteBalance(accountId: String): String {
+        return unitOfWork.accountRepository.getById(accountId)?.balance?.toString() ?: "0"
     }
 }

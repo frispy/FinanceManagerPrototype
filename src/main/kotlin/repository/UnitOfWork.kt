@@ -1,19 +1,21 @@
 package repository
 
-class UnitOfWork(private val baseDirectory: String) {
+import data.AppDatabase
+
+class UnitOfWork(private val database: AppDatabase) {
     val accountRepository: AccountRepository by lazy {
-        AccountRepository("$baseDirectory/accounts.json")
+        AccountRepository(database.accountDao())
     }
 
     val userRepository: UserRepository by lazy {
-        UserRepository("$baseDirectory/users.json")
+        UserRepository(database.userDao())
     }
 
     val transactionRepository: TransactionRepository by lazy {
-        TransactionRepository("$baseDirectory/transactions.json")
+        TransactionRepository(database.transactionDao())
     }
 
     val categoryRepository: CategoryRepository by lazy {
-        CategoryRepository("$baseDirectory/categories.json")
+        CategoryRepository(database.categoryDao())
     }
 }

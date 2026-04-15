@@ -1,23 +1,30 @@
 package factory
 
+import kotlin.time.Clock
+import kotlin.time.Instant
 import model.params.TransactionCreationParams
 import model.transaction.Transaction
 import model.transaction.TransactionBase
-import java.time.Clock
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class TransactionFactory(
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.System // Use the Kotlinx System clock
 ) {
+    @OptIn(ExperimentalUuidApi::class)
     fun create(params: TransactionCreationParams): Transaction {
-        // helper to convert Params.Common to TransactionBase
+        // Capture the current time using Kotlinx Datetime
+        val now: Instant = clock.now()
+
         fun createBase(c: TransactionCreationParams.Common) = TransactionBase(
-            id = UUID.randomUUID().toString(), // or however you make IDs
+            id = Uuid.random().toString(),
             userId = c.userId,
             accountId = c.accountId,
             amount = c.amount,
             currency = c.currency,
-            date = c.date,
+            // If TransactionBase expects a Kotlinx Instant, use 'now'
+            // If it expects a String/Long, convert 'now' accordingly
+            date = clock.now().toString(),
             categoryId = c.categoryId,
             note = c.note
         )

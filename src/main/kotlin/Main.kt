@@ -1,28 +1,32 @@
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import factory.*
 import repository.*
 import service.*
 import model.params.*
 import model.enum.CurrencyType
+import data.AppDatabase // Переконайся, що імпортуєш свій клас бази даних
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first // Важливий імпорт для роботи з Flow
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
     try {
         println("=== Запуск Менеджера особистих фінансів (CLI) ===")
 
-        // 1. Ініціалізація фабрик (залишаємо як було)
+        // 1. Ініціалізація фабрик
         val userFactory = UserFactory()
         val accountFactory = AccountFactory()
         val transactionFactory = TransactionFactory()
 
-        // 2. Ініціалізація UnitOfWork
-        val unitOfWork = UnitOfWork("data_files")
+        // 2. Ініціалізація Бази Даних (Room)
+        val database = createTestDatabase() // Створимо заглушку нижче для наочності
 
-        // 3. Асинхронне завантаження даних
-        println("Завантаження даних...")
-        unitOfWork.userRepository.loadData()
-        unitOfWork.accountRepository.loadData()
-        unitOfWork.transactionRepository.loadData()
-        unitOfWork.categoryRepository.loadData()
+        // 3. Ініціалізація UnitOfWork
+        val unitOfWork = UnitOfWork(database)
+
+        // БІЛЬШЕ НЕ ПОТРІБНО: loadData() видалено!
+        println("Підключення до бази даних успішне...")
 
         // 4. Ініціалізація сервісів
         val currencyExchange = BasicCurrencyExchangeService()
@@ -53,9 +57,10 @@ fun main() = runBlocking {
         val salaryCategory = categoryService.createCategory("Зарплата")
         println("Створено категорії: ${foodCategory?.name}, ${salaryCategory?.name}")
 
-
         // Звертаємось до репозиторію через unitOfWork
-        val myWallet = unitOfWork.accountRepository.getAll().firstOrNull { it.userId == currentUser.id }
+        // Використовуємо .first() щоб взяти поточний знімок списку з Flow
+        val allAccounts = unitOfWork.accountRepository.getAllAccountsFlow().first()
+        val myWallet = allAccounts.firstOrNull { it.userId == currentUser.id }
 
         if (myWallet != null) {
             println("Рахунок готовий. Баланс: ${accountService.getConcreteBalance(myWallet.id)}")
@@ -100,5 +105,16 @@ fun main() = runBlocking {
         println("\n❌ КРИТИЧНА ПОМИЛКА ПІД ЧАС ВИКОНАННЯ:")
         e.printStackTrace()
     }
+}
 
+
+fun createTestDatabase(): AppDatabase {
+    val dbFile = java.io.File("my_finances.db")
+
+    return Room.databaseBuilder<AppDatabase>(
+        name = dbFile.absolutePath
+    )
+        .setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(Dispatchers.IO)
+        .build()
 }

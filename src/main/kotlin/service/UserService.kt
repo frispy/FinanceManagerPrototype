@@ -18,7 +18,7 @@ class UserService(
         return true
     }
 
-    fun login(login: String, pass: String): User? {
+    suspend fun login(login: String, pass: String): User? {
         val user = unitOfWork.userRepository.findByLogin(login) ?: return null
         if (pass.toByteArray().contentEquals(user.passwordHash)) {
             return user

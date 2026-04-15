@@ -1,13 +1,16 @@
 package service
 
+import kotlinx.coroutines.flow.Flow
 import model.transaction.TransactionCategory
 import repository.CategoryRepository
 import repository.UnitOfWork
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class CategoryService(
     private val unitOfWork: UnitOfWork,
 ) {
+    @OptIn(ExperimentalUuidApi::class)
     suspend fun createCategory(name: String): TransactionCategory? {
         // check for duplicates
         val existing = unitOfWork.categoryRepository.findByName(name)
@@ -17,7 +20,7 @@ class CategoryService(
 
         // generate new id and object
         val newCategory = TransactionCategory(
-            id = UUID.randomUUID().toString(),
+            id = Uuid.random().toString(),
             name = name
         )
 
@@ -27,8 +30,8 @@ class CategoryService(
     }
 
     // fetch all stored categories
-    fun getAllCategories(): List<TransactionCategory> {
-        return unitOfWork.categoryRepository.getAll()
+    suspend fun getAllCategories(): Flow<List<TransactionCategory>> {
+        return unitOfWork.categoryRepository.getAllCategoriesFlow()
     }
 
     // delete specific category
