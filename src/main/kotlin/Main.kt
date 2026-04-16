@@ -5,9 +5,9 @@ import repository.*
 import service.*
 import model.params.*
 import model.enum.CurrencyType
-import data.AppDatabase // Переконайся, що імпортуєш свій клас бази даних
+import data.AppDatabase
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first // Важливий імпорт для роботи з Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
@@ -20,21 +20,27 @@ fun main() = runBlocking {
         val transactionFactory = TransactionFactory()
 
         // 2. Ініціалізація Бази Даних (Room)
-        val database = createTestDatabase() // Створимо заглушку нижче для наочності
-
-        // 3. Ініціалізація UnitOfWork
-        val unitOfWork = UnitOfWork(database)
-
-        // БІЛЬШЕ НЕ ПОТРІБНО: loadData() видалено!
+        val database = createTestDatabase()
         println("Підключення до бази даних успішне...")
 
-        // 4. Ініціалізація сервісів
+        // 3. Ініціалізація Репозиторіїв (замість UnitOfWork)
+        val userRepository: UserRepository = UserRepositoryImpl(database.userDao())
+        val accountRepository: AccountRepository = AccountRepositoryImpl(database.accountDao())
+        val transactionRepository: TransactionRepository = TransactionRepositoryImpl(database.transactionDao())
+        val categoryRepository: CategoryRepository = CategoryRepositoryImpl(database.categoryDao())
+
+        // 4. Ініціалізація сервісів (впровадження залежностей через конструктор)
         val currencyExchange = BasicCurrencyExchangeService()
 
-        val userService = UserService(unitOfWork, userFactory)
-        val accountService = AccountService(unitOfWork, accountFactory)
-        val transactionService = TransactionService(unitOfWork, accountService, transactionFactory, currencyExchange)
-        val categoryService = CategoryService(unitOfWork)
+        val userService = UserService(userRepository, userFactory)
+        val accountService = AccountService(accountRepository, accountFactory)
+        val transactionService = TransactionService(
+            transactionRepository = transactionRepository,
+            accountService = accountService,
+            transactionFactory = transactionFactory,
+            currencyExchange = currencyExchange
+        )
+        val categoryService = CategoryService(categoryRepository)
 
         // --- ДЕМОНСТРАЦІЯ ЛОГІКИ ---
 
@@ -57,9 +63,8 @@ fun main() = runBlocking {
         val salaryCategory = categoryService.createCategory("Зарплата")
         println("Створено категорії: ${foodCategory?.name}, ${salaryCategory?.name}")
 
-        // Звертаємось до репозиторію через unitOfWork
-        // Використовуємо .first() щоб взяти поточний знімок списку з Flow
-        val allAccounts = unitOfWork.accountRepository.getAllAccountsFlow().first()
+        // Звертаємось напряму до потрібного репозиторію
+        val allAccounts = accountRepository.getAllAccountsFlow().first()
         val myWallet = allAccounts.firstOrNull { it.userId == currentUser.id }
 
         if (myWallet != null) {
@@ -106,7 +111,6 @@ fun main() = runBlocking {
         e.printStackTrace()
     }
 }
-
 
 fun createTestDatabase(): AppDatabase {
     val dbFile = java.io.File("my_finances.db")

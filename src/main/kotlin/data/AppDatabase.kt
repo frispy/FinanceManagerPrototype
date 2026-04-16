@@ -3,15 +3,12 @@ package data
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import data.dao.*
-import data.entity.AccountEntity
-import data.entity.TransactionEntity
-import model.transaction.TransactionCategory
-import model.user.User
+import data.entity.*
 
 @Database(
     entities = [
-        User::class,
-        TransactionCategory::class,
+        UserEntity::class,
+        CategoryEntity::class,
         AccountEntity::class,
         TransactionEntity::class
     ],

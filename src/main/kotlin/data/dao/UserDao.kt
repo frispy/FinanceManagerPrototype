@@ -1,16 +1,16 @@
 package data.dao
 
 import androidx.room.*
-import model.user.User
+import data.entity.UserEntity
 
 @Dao
 interface UserDao {
     @Query("SELECT * FROM users WHERE login = :login LIMIT 1")
-    suspend fun findByLogin(login: String): User?
+    suspend fun findByLogin(login: String): UserEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(user: User)
+    suspend fun insert(user: UserEntity)
 
     @Update
-    suspend fun update(user: User)
+    suspend fun update(user: UserEntity)
 }
